@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment{
-        registry = "devopsni3/insighttellers"
+        registry = "mojizrahman/web-dev"
         registryCredential = "docker-cred"
         dockerImage = ''
     }
@@ -31,17 +31,16 @@ pipeline {
  //     }
         stage('Secrets Copy') {
             steps{
-                    withCredentials([file(credentialsId: 'serverkey', variable: 'serverkey')]) {
-                        sh "cp \$serverkey serverkey.pem"
+                    withCredentials([file(credentialsId: 'aws-docker-ec2-cred', variable: 'serverkey')]) {
+                        sh "cp \$serverkey web1.pem"
                 }
             }
         }
         stage('docker Deploy') {
             steps{
                 sh 'chmod 400 serverkey.pem'
-                sh 'ssh -o StrictHostKeyChecking=no -i serverkey.pem ubuntu@54.197.197.130 sudo docker rm -f insighttellers-app'
-                sh 'ssh -o StrictHostKeyChecking=no -i serverkey.pem ubuntu@54.197.197.130 sudo docker run --name insighttellers-app --restart=always -p 80:80 -d $registry:app-$BUILD_NUMBER'
-                sh 'ssh -o StrictHostKeyChecking=no -i serverkey.pem ubuntu@54.197.197.130 sudo docker system prune -f'
+                sh 'ssh -o StrictHostKeyChecking=no -i web1.pem ec2-user@3.142.164.107 sudo docker run --name web-dev-app --restart=always -p 80:80 -d $registry:app-$BUILD_NUMBER'
+                sh 'ssh -o StrictHostKeyChecking=no -i web1.pem ec2-user@3.142.164.107 sudo docker system prune -f'
             }
         }
         stage('Workspace Cleanup') {
