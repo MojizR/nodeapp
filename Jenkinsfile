@@ -38,7 +38,7 @@ pipeline {
         }
         stage('docker Deploy') {
             steps{
-                sh 'chmod 400 serverkey.pem'
+                sh 'chmod 400 web1.pem'
                 sh 'ssh -o StrictHostKeyChecking=no -i web1.pem ec2-user@3.142.164.107 sudo docker run --name web-dev-app --restart=always -p 80:80 -d $registry:app-$BUILD_NUMBER'
                 sh 'ssh -o StrictHostKeyChecking=no -i web1.pem ec2-user@3.142.164.107 sudo docker system prune -f'
             }
