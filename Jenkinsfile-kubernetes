@@ -1,42 +1,52 @@
 pipeline {
-
-  environment {
-    dockerimagename = "ni3devops/nodeapp-test"
-    dockerImage = ""
-  }
-
-  agent any
-
-  stages {
-    stage('Build image') {
-      steps{
-        script {
-          dockerImage = docker.build dockerimagename
-        }
-      }
+    agent any
+    environment{
+        registry = "mojizrahman/web-dev"
+        registryCredential = "docker-cred"
+        dockerImage = ''
     }
-
-    stage('Pushing Image') {
-      environment {
-               registryCredential = 'docker-cred'
-           }
-      steps{
-        script {
-          docker.withRegistry( 'https://registry.hub.docker.com', registryCredential ) {
-            dockerImage.push("latest")
-          }
+    stages {
+        stage('Building Dockerimage') {
+            steps{
+                script {
+                    docker.withRegistry( '', registryCredential ) {
+                        dockerImage = docker.build( registry + ":app-$BUILD_NUMBER")
+                    }
+                }
+            }
         }
-      }
-    }
-
-    stage('Deploying App to Kubernetes') {
-      steps {
-        script {
-          kubernetesDeploy(configs: "deploymentservice.yml", kubeconfigId: "kubernetes-cred")
+        stage('Pushing Dockerimage Into Dockerhub') {
+            steps{
+                script {
+                    docker.withRegistry( '', registryCredential ) {
+                        dockerImage.push()
+                    }
+                }
+            }
         }
-      }
+ //       stage('Remove Unused Dockerimage') {
+ //          steps{
+ //              sh "docker rmi $registry:app-$BUILD_NUMBER"
+ //         }
+ //     }
+
+        stage('Secrets Copy') {
+            steps{
+                    withCredentials([file(credentialsId: 'localkubernetes', variable: 'localkubernetes')]) {
+                        sh "cp \$localkubernetes config"
+                }
+            }
+        }
+        stage('kubernetes Deploy') {
+            steps{
+            sh 'kubectl --kubeconfig=config apply -f /root/kubernetes/deploymentservice.yml'
+            }
+        }
+        
+        stage('Workspace Cleanup') {
+            steps{
+                cleanWs()
+            }
+        }
     }
-
-  }
-
 }
