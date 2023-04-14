@@ -33,6 +33,7 @@ pipeline {
         stage('Secrets Copy') {
             steps{
                     withCredentials([file(credentialsId: 'localkubernetes', variable: 'localkubernetes')]) {
+                        sh "pwd"
                         sh "cp \$localkubernetes config"
                 }
             }
