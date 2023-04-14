@@ -1,0 +1,45 @@
+pipeline {
+    agent any
+    environment{
+        registry = "mojizrahman/web-dev"
+        registryCredential = "docker-cred"
+        dockerImage = ''
+    }
+    stages {
+        stage('Building Dockerimage') {
+            steps{
+                script {
+                    docker.withRegistry( '', registryCredential ) {
+                        dockerImage = docker.build( registry + ":app-$BUILD_NUMBER")
+                    }
+                }
+            }
+        }
+        stage('Pushing Dockerimage Into Dockerhub') {
+            steps{
+                script {
+                    docker.withRegistry( '', registryCredential ) {
+                        dockerImage.push()
+                    }
+                }
+            }
+        }
+        stage('Secrets Copy') {
+            steps{
+                    withCredentials([file(credentialsId: 'localkubernetes', variable: 'localkubernetes')]) {
+                        sh "cp \$localkubernetes config"
+                }
+            }
+        }
+        stage('docker Deploy') {
+            steps{
+            sh 'kubectl --kubeconfig=config apply -f deploymentservice.yml'
+            }
+        }
+        stage('Workspace Cleanup') {
+            steps{
+                cleanWs()
+            }
+        }
+    }
+}
