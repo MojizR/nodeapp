@@ -27,6 +27,8 @@ pipeline {
         stage('Secrets Copy') {
             steps{
                     withCredentials([file(credentialsId: 'localkubernetes', variable: 'localkubernetes')]) {
+                        sh "pwd"
+                        sh "whoami"
                         sh "cp \$localkubernetes config"
                 }
             }
